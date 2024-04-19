@@ -41,6 +41,8 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/graphics_pipeline.h
         src/engine/renderer/vulkan/surface.c
         src/engine/renderer/vulkan/surface.h
+        src/engine/renderer/vulkan/command_buffer.c
+        src/engine/renderer/vulkan/command_buffer.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g -DAPI_EXPORT)
 target_include_directories(dark_matter_engine PUBLIC src)

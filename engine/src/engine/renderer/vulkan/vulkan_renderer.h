@@ -9,3 +9,5 @@ bool vulkan_initialize(RendererBackend *backend, PlatformState *platform_state, 
 void vulkan_shutdown(RendererBackend *backend);
 
 void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height);
+
+void vulkan_render(RendererBackend *backend, RenderPacket *packet);

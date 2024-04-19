@@ -70,6 +70,7 @@ void create_command_pools(VulkanContext *context) {
         QueueFamily *family = &context->device.queue_families[i];
         VkCommandPoolCreateInfo create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
         create_info.queueFamilyIndex = family->index;
+        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         VK_CHECK(vkCreateCommandPool(context->device.vk_device, &create_info, context->allocation_callbacks,
                                      &family->command_pool))

@@ -52,6 +52,7 @@ void application_run() {
 
         application_state.game->update(application_state.game, 0);
         application_state.game->render(application_state.game, 0);
+        renderer_draw_frame(NULL);
     }
 }
 

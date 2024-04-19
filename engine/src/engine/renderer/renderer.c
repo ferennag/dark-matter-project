@@ -11,6 +11,7 @@ bool renderer_init(PlatformState *platform_state, const char *app_name) {
     renderer_backend.initialize = vulkan_initialize;
     renderer_backend.shutdown = vulkan_shutdown;
     renderer_backend.resized = vulkan_surface_resized;
+    renderer_backend.render = vulkan_render;
 #endif
 
     return renderer_backend.initialize(&renderer_backend, platform_state, app_name);
@@ -25,4 +26,5 @@ void renderer_resized(u32 width, u32 height) {
 }
 
 void renderer_draw_frame(RenderPacket *packet) {
+    renderer_backend.render(&renderer_backend, packet);
 }

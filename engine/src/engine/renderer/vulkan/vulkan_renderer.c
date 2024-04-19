@@ -10,6 +10,7 @@
 #include "swapchain.h"
 #include "graphics_pipeline.h"
 #include "surface.h"
+#include "command_buffer.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -43,6 +44,45 @@ void vulkan_shutdown(RendererBackend *backend) {
 }
 
 void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height) {
+}
+
+void vulkan_render(RendererBackend *backend, RenderPacket *packet) {
+    const int image_index = 0;
+
+    VulkanContext *context = backend->renderer_context;
+
+    command_buffer_begin(&context->graphics_buffer);
+
+    VkClearValue clear_color = {.color = {{0.05f, 0.05f, 0.05f, 1.0f}}};
+
+    VkRenderPassBeginInfo render_pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+    render_pass_info.renderPass = context->graphics_pipeline.render_pass;
+    render_pass_info.framebuffer = context->swap_chain.framebuffers[image_index];
+    render_pass_info.renderArea.offset = (VkOffset2D) {0, 0};
+    render_pass_info.renderArea.extent = context->surface.capabilities.currentExtent;
+    render_pass_info.pClearValues = &clear_color;
+    render_pass_info.clearValueCount = 1;
+
+    vkCmdBeginRenderPass(context->graphics_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(context->graphics_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      context->graphics_pipeline.vk_pipeline);
+
+    VkViewport viewport = {0};
+    viewport.width = context->surface.capabilities.currentExtent.width;
+    viewport.height = context->surface.capabilities.currentExtent.height;
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+    vkCmdSetViewport(context->graphics_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor = {0};
+    scissor.offset = (VkOffset2D) {0, 0};
+    scissor.extent = context->surface.capabilities.currentExtent;
+    vkCmdSetScissor(context->graphics_buffer, 0, 1, &scissor);
+
+    vkCmdDraw(context->graphics_buffer, 3, 0, 0, 0);
+
+    vkCmdEndRenderPass(context->graphics_buffer);
+    command_buffer_end(&context->graphics_buffer);
 }
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name) {
@@ -79,6 +119,11 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
         LOG_ERROR("Failed to create swap chain");
         return false;
     }
+
+    QueueFamily *graphics_family = find_queue_family(context, QUEUE_GRAPHICS);
+    command_buffer_create(context, graphics_family, &context->graphics_buffer);
+    QueueFamily *present_family = find_queue_family(context, QUEUE_PRESENT);
+    command_buffer_create(context, present_family, &context->present_buffer);
 
     return true;
 }

@@ -80,4 +80,7 @@ typedef struct VulkanContext {
     Surface surface;
     SwapChain swap_chain;
     GraphicsPipeline graphics_pipeline;
+
+    VkCommandBuffer graphics_buffer;
+    VkCommandBuffer present_buffer;
 } VulkanContext;
