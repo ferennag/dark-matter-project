@@ -25,10 +25,8 @@ void on_resize(struct Game *game_instance, u32 width, u32 height) {
 void on_event(EventType event_type, EventData data) {
     switch (event_type) {
         case EVENT_KEYUP:
-            LOG_INFO("Received keyup event: %d", event_type);
             break;
         case EVENT_KEYDOWN:
-            LOG_INFO("Received keydown event: %d", event_type);
             if (data.data_u32[0] == KEY_ESCAPE || data.data_u32[0] == KEY_Q) {
                 application_quit();
             }

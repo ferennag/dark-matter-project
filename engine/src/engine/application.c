@@ -3,6 +3,7 @@
 #include "std/core/logger.h"
 #include "engine/platform/platform.h"
 #include "game_types.h"
+#include "renderer/renderer.h"
 
 typedef struct ApplicationState {
     bool is_running;
@@ -22,6 +23,11 @@ bool application_startup(Game *game) {
         return false;
     }
 
+    if(!renderer_init(application_state.platform_state, game->config.name)) {
+        LOG_FATAL("Failed to initialize the renderer!");
+        return false;
+    }
+
     if (!application_state.game->initialize(application_state.game)) {
         LOG_ERROR("Failed to initialize the game instance");
         return false;
@@ -32,6 +38,7 @@ bool application_startup(Game *game) {
 
 void application_shutdown() {
     application_state.game->on_shutdown(application_state.game);
+    renderer_shutdown();
     platform_shutdown(application_state.platform_state);
 }
 

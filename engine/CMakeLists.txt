@@ -6,6 +6,8 @@ FetchContent_Declare(SDL2
 )
 FetchContent_MakeAvailable(SDL2)
 
+find_package(Vulkan)
+
 add_library(dark_matter_engine SHARED
         src/engine/renderer/renderer.h
         src/engine/renderer/renderer.c
@@ -18,7 +20,10 @@ add_library(dark_matter_engine SHARED
         src/engine/core/event.c
         src/engine/core/event.h
         src/engine/core/input.h
+        src/engine/renderer/vulkan/vulkan_renderer.c
+        src/engine/renderer/vulkan/vulkan_renderer.h
+        src/engine/renderer/vulkan/vulkan_types.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g)
 target_include_directories(dark_matter_engine PUBLIC src)
-target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2)
+target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan)
