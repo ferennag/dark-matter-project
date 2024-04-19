@@ -10,6 +10,8 @@ typedef struct ApplicationConfig {
 
 bool application_startup(Game *game);
 
+void application_shutdown();
+
 void application_run();
 
-void application_shutdown();
+void application_quit();

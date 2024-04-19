@@ -3,11 +3,16 @@
 #include <std/std.h>
 #include "application.h"
 #include "game_types.h"
+#include "engine/core/event.h"
 
 extern bool create_game(Game *out_game);
 
 int main(void) {
     Game game_instance;
+
+    init_logging();
+    event_init();
+
     if (!create_game(&game_instance)) {
         LOG_ERROR("Failed to create game instance!");
         return -1;
@@ -20,5 +25,9 @@ int main(void) {
 
     application_run();
     application_shutdown();
+
+    event_shutdown();
+    shutdown_logging();
+
     return 0;
 }

@@ -1,7 +1,7 @@
 #include "application.h"
-#include "engine/platform/platform.h"
 #include "std/core/memory.h"
 #include "std/core/logger.h"
+#include "engine/platform/platform.h"
 #include "game_types.h"
 
 typedef struct ApplicationState {
@@ -15,8 +15,6 @@ static ApplicationState application_state = {0};
 
 bool application_startup(Game *game) {
     application_state.game = game;
-
-    init_logging();
 
     application_state.platform_state = memory_alloc(sizeof(PlatformState));
     if (!platform_startup(application_state.platform_state, game->config.name)) {
@@ -32,6 +30,11 @@ bool application_startup(Game *game) {
     return true;
 }
 
+void application_shutdown() {
+    application_state.game->on_shutdown(application_state.game);
+    platform_shutdown(application_state.platform_state);
+}
+
 void application_run() {
     application_state.is_running = true;
 
@@ -45,8 +48,6 @@ void application_run() {
     }
 }
 
-void application_shutdown() {
-    application_state.game->on_shutdown(application_state.game);
-    platform_shutdown(application_state.platform_state);
-    shutdown_logging();
+void application_quit() {
+    application_state.is_running = false;
 }

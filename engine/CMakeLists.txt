@@ -15,6 +15,9 @@ add_library(dark_matter_engine SHARED
         src/engine/application.h
         src/engine/entry.h
         src/engine/game_types.h
+        src/engine/core/event.c
+        src/engine/core/event.h
+        src/engine/core/input.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g)
 target_include_directories(dark_matter_engine PUBLIC src)
