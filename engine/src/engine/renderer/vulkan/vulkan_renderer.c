@@ -30,6 +30,12 @@ bool vulkan_initialize(RendererBackend *backend, PlatformState *platform_state, 
 void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
+    vkDeviceWaitIdle(context->device.vk_device);
+
+    vkDestroyFence(context->device.vk_device, context->in_flight_fence, context->allocation_callbacks);
+    vkDestroySemaphore(context->device.vk_device, context->render_finished_semaphore, context->allocation_callbacks);
+    vkDestroySemaphore(context->device.vk_device, context->image_available_semaphore, context->allocation_callbacks);
+
     graphics_pipeline_destroy(context, &context->graphics_pipeline);
     swapchain_destroy(context, &context->swap_chain);
     device_destroy(context);
@@ -46,14 +52,10 @@ void vulkan_shutdown(RendererBackend *backend) {
 void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height) {
 }
 
-void vulkan_render(RendererBackend *backend, RenderPacket *packet) {
-    const int image_index = 0;
+void record_commands(VulkanContext *context, RenderPacket *packet, const u32 image_index) {
+    command_buffer_begin(&context->graphics_queue.command_buffer);
 
-    VulkanContext *context = backend->renderer_context;
-
-    command_buffer_begin(&context->graphics_buffer);
-
-    VkClearValue clear_color = {.color = {{0.05f, 0.05f, 0.05f, 1.0f}}};
+    VkClearValue clear_color = {.color = {{0.02f, 0.02f, 0.02f, 1.0f}}};
 
     VkRenderPassBeginInfo render_pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
     render_pass_info.renderPass = context->graphics_pipeline.render_pass;
@@ -63,8 +65,8 @@ void vulkan_render(RendererBackend *backend, RenderPacket *packet) {
     render_pass_info.pClearValues = &clear_color;
     render_pass_info.clearValueCount = 1;
 
-    vkCmdBeginRenderPass(context->graphics_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(context->graphics_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+    vkCmdBeginRenderPass(context->graphics_queue.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(context->graphics_queue.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                       context->graphics_pipeline.vk_pipeline);
 
     VkViewport viewport = {0};
@@ -72,17 +74,67 @@ void vulkan_render(RendererBackend *backend, RenderPacket *packet) {
     viewport.height = context->surface.capabilities.currentExtent.height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1;
-    vkCmdSetViewport(context->graphics_buffer, 0, 1, &viewport);
+    vkCmdSetViewport(context->graphics_queue.command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset = (VkOffset2D) {0, 0};
     scissor.extent = context->surface.capabilities.currentExtent;
-    vkCmdSetScissor(context->graphics_buffer, 0, 1, &scissor);
+    vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
-    vkCmdDraw(context->graphics_buffer, 3, 0, 0, 0);
+    vkCmdDraw(context->graphics_queue.command_buffer, 3, 0, 0, 0);
 
-    vkCmdEndRenderPass(context->graphics_buffer);
-    command_buffer_end(&context->graphics_buffer);
+    vkCmdEndRenderPass(context->graphics_queue.command_buffer);
+    command_buffer_end(&context->graphics_queue.command_buffer);
+}
+
+void vulkan_render(RendererBackend *backend, RenderPacket *packet) {
+    VulkanContext *context = backend->renderer_context;
+
+    VK_CHECK(vkWaitForFences(context->device.vk_device, 1, &context->in_flight_fence, true, UINT64_MAX))
+    VK_CHECK(vkResetFences(context->device.vk_device, 1, &context->in_flight_fence))
+
+    u32 image_index = 0;
+    VK_CHECK(vkAcquireNextImageKHR(context->device.vk_device, context->swap_chain.vk_swapchain, UINT64_MAX,
+                                   context->image_available_semaphore, NULL, &image_index))
+
+    vkResetCommandBuffer(context->graphics_queue.command_buffer, 0);
+    record_commands(context, packet, image_index);
+
+    VkSemaphore waitSemaphores[] = {context->image_available_semaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &context->graphics_queue.command_buffer;
+
+    VkSemaphore signalSemaphores[] = {context->render_finished_semaphore};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    VK_CHECK(vkQueueSubmit(context->graphics_queue.vk_queue, 1, &submitInfo, context->in_flight_fence))
+
+    VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = signalSemaphores;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &context->swap_chain.vk_swapchain;
+    present_info.pImageIndices = &image_index;
+
+    VK_CHECK(vkQueuePresentKHR(context->present_queue.vk_queue, &present_info))
+}
+
+void create_fence(VulkanContext *context, VkFence *out) {
+    VkFenceCreateInfo create_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK(vkCreateFence(context->device.vk_device, &create_info, context->allocation_callbacks, out))
+}
+
+void create_semaphore(VulkanContext *context, VkSemaphore *out) {
+    VkSemaphoreCreateInfo create_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VK_CHECK(vkCreateSemaphore(context->device.vk_device, &create_info, context->allocation_callbacks, out))
 }
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name) {
@@ -121,9 +173,16 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
     }
 
     QueueFamily *graphics_family = find_queue_family(context, QUEUE_GRAPHICS);
-    command_buffer_create(context, graphics_family, &context->graphics_buffer);
+    vkGetDeviceQueue(context->device.vk_device, graphics_family->index, 0, &context->graphics_queue.vk_queue);
+    command_buffer_create(context, graphics_family, &context->graphics_queue.command_buffer);
+
     QueueFamily *present_family = find_queue_family(context, QUEUE_PRESENT);
-    command_buffer_create(context, present_family, &context->present_buffer);
+    vkGetDeviceQueue(context->device.vk_device, present_family->index, 0, &context->present_queue.vk_queue);
+    command_buffer_create(context, present_family, &context->graphics_queue.command_buffer);
+
+    create_fence(context, &context->in_flight_fence);
+    create_semaphore(context, &context->image_available_semaphore);
+    create_semaphore(context, &context->render_finished_semaphore);
 
     return true;
 }

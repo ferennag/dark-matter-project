@@ -42,6 +42,12 @@ typedef struct QueueFamily {
     VkCommandPool command_pool;
 } QueueFamily;
 
+typedef struct Queue {
+    QueueFamily *family;
+    VkQueue vk_queue;
+    VkCommandBuffer command_buffer;
+} Queue;
+
 typedef struct Device {
     VkDevice vk_device;
     QueueFamily *queue_families;
@@ -81,6 +87,10 @@ typedef struct VulkanContext {
     SwapChain swap_chain;
     GraphicsPipeline graphics_pipeline;
 
-    VkCommandBuffer graphics_buffer;
-    VkCommandBuffer present_buffer;
+    Queue graphics_queue;
+    Queue present_queue;
+
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
 } VulkanContext;

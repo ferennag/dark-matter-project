@@ -110,6 +110,7 @@ bool platform_vulkan_create_surface(PlatformState *platform_state, VulkanContext
         LOG_ERROR("Failed to create SDL vulkan surface: %s", SDL_GetError());
         return false;
     }
+
     return true;
 }
 

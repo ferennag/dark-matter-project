@@ -36,11 +36,21 @@ void create_render_pass(VulkanContext *context, VkRenderPass *out) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_reference;
 
+    VkSubpassDependency dependency = {0};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo render_pass_create_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
     render_pass_create_info.attachmentCount = 1;
     render_pass_create_info.pAttachments = &color_attachment_description;
     render_pass_create_info.subpassCount = 1;
     render_pass_create_info.pSubpasses = &subpass;
+    render_pass_create_info.dependencyCount = 1;
+    render_pass_create_info.pDependencies = &dependency;
 
     VK_CHECK(
             vkCreateRenderPass(context->device.vk_device, &render_pass_create_info, context->allocation_callbacks, out))
