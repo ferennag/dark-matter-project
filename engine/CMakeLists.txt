@@ -35,6 +35,10 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/device.h
         src/engine/renderer/vulkan/swapchain.c
         src/engine/renderer/vulkan/swapchain.h
+        src/engine/renderer/vulkan/frame_buffer.c
+        src/engine/renderer/vulkan/frame_buffer.h
+        src/engine/renderer/vulkan/graphics_pipeline.c
+        src/engine/renderer/vulkan/graphics_pipeline.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g -DAPI_EXPORT)
 target_include_directories(dark_matter_engine PUBLIC src)

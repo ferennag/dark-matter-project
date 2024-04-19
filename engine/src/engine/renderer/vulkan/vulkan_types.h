@@ -55,6 +55,10 @@ typedef struct SwapChain {
     VkImageView *image_views;
 } SwapChain;
 
+typedef struct GraphicsPipeline {
+    VkRenderPass render_pass;
+} GraphicsPipeline;
+
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
     VkDebugUtilsMessengerEXT debug_utils_messenger;
@@ -64,4 +68,5 @@ typedef struct VulkanContext {
     VkSurfaceKHR surface;
     Device device;
     SwapChain swap_chain;
+    GraphicsPipeline graphics_pipeline;
 } VulkanContext;

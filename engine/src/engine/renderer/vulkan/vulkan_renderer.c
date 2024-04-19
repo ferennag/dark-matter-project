@@ -8,6 +8,7 @@
 #include "physical_device.h"
 #include "device.h"
 #include "swapchain.h"
+#include "graphics_pipeline.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -27,6 +28,7 @@ bool vulkan_initialize(RendererBackend *backend, PlatformState *platform_state, 
 void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
+    graphics_pipeline_destroy(context, &context->graphics_pipeline);
     swapchain_destroy(context, &context->swap_chain);
     device_destroy(context);
     vkDestroySurfaceKHR(context->instance.vk_instance, context->surface, context->allocation_callbacks);
@@ -67,8 +69,13 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
         return false;
     }
 
-    if(!swapchain_create(context, &context->swap_chain)) {
+    if (!swapchain_create(context, &context->swap_chain)) {
         LOG_ERROR("Failed to create swap chain");
+        return false;
+    }
+
+    if (!graphics_pipeline_create(context, &context->graphics_pipeline)) {
+        LOG_ERROR("Failed to create graphics pipeline");
         return false;
     }
 
