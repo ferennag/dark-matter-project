@@ -1,6 +1,8 @@
 #include "physical_device.h"
 #include <std/containers/darray.h>
 
+// TODO add a more robust device selection with a priority queue
+
 PhysicalDevice *query_host_devices(VulkanContext *context) {
     u32 count = 0;
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance.vk_instance, &count, NULL))
