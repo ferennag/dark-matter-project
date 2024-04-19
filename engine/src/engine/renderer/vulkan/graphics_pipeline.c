@@ -17,7 +17,7 @@ void create_shader_module(VulkanContext *context, const char *shader_binary_path
 }
 
 void create_render_pass(VulkanContext *context, VkRenderPass *out) {
-    VkAttachmentDescription color_attachment_description = {};
+    VkAttachmentDescription color_attachment_description = {0};
     color_attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     color_attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -27,11 +27,11 @@ void create_render_pass(VulkanContext *context, VkRenderPass *out) {
     color_attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkAttachmentReference color_attachment_reference = {};
+    VkAttachmentReference color_attachment_reference = {0};
     color_attachment_reference.attachment = 0;
     color_attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription subpass = {};
+    VkSubpassDescription subpass = {0};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_reference;
@@ -94,8 +94,8 @@ bool graphics_pipeline_create(VulkanContext *context, GraphicsPipeline *out) {
     rasterization_create_info.depthBiasEnable = false;
     rasterization_create_info.depthClampEnable = false;
     rasterization_create_info.rasterizerDiscardEnable = false;
-    rasterization_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
+//    rasterization_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_create_info.cullMode = VK_CULL_MODE_NONE;
 
     VkPipelineMultisampleStateCreateInfo multisample_create_info = {
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
@@ -143,6 +143,7 @@ bool graphics_pipeline_create(VulkanContext *context, GraphicsPipeline *out) {
     create_info.pVertexInputState = &vertex_input_create_info;
     create_info.pViewportState = &viewport_state_create_info;
     create_info.renderPass = out->render_pass;
+    create_info.subpass = 0;
     create_info.stageCount = sizeof(stages) / sizeof(stages[0]);
     create_info.pStages = stages;
     create_info.layout = out->pipeline_layout;

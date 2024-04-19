@@ -55,7 +55,7 @@ void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height) {
 void record_commands(VulkanContext *context, RenderPacket *packet, const u32 image_index) {
     command_buffer_begin(&context->graphics_queue.command_buffer);
 
-    VkClearValue clear_color = {.color = {{0.02f, 0.02f, 0.02f, 1.0f}}};
+    VkClearValue clear_color = {{{0.02f, 0.02f, 0.02f, 1.0f}}};
 
     VkRenderPassBeginInfo render_pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
     render_pass_info.renderPass = context->graphics_pipeline.render_pass;
@@ -178,7 +178,7 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
 
     QueueFamily *present_family = find_queue_family(context, QUEUE_PRESENT);
     vkGetDeviceQueue(context->device.vk_device, present_family->index, 0, &context->present_queue.vk_queue);
-    command_buffer_create(context, present_family, &context->graphics_queue.command_buffer);
+    command_buffer_create(context, present_family, &context->present_queue.command_buffer);
 
     create_fence(context, &context->in_flight_fence);
     create_semaphore(context, &context->image_available_semaphore);
