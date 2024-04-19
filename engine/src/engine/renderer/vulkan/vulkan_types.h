@@ -26,11 +26,33 @@ typedef struct PhysicalDevice {
     VkPhysicalDeviceProperties properties;
 } PhysicalDevice;
 
+typedef enum QueueCapability {
+    QUEUE_GRAPHICS,
+    QUEUE_COMPUTE,
+    QUEUE_TRANSFER,
+    QUEUE_PRESENT,
+
+    // This must be last
+    QUEUE_CAPABILITIES_MAX_ENUM,
+} QueueCapability;
+
+typedef struct QueueFamily {
+    u32 index;
+    bool capabilities[QUEUE_CAPABILITIES_MAX_ENUM];
+} QueueFamily;
+
+typedef struct Device {
+    VkDevice vk_device;
+    QueueFamily *queue_families;
+    VkExtensionProperties *available_extensions;
+} Device;
+
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
     VkDebugUtilsMessengerEXT debug_utils_messenger;
 
     VulkanInstance instance;
     PhysicalDevice physical_device;
-    VkDevice device;
+    VkSurfaceKHR surface;
+    Device device;
 } VulkanContext;

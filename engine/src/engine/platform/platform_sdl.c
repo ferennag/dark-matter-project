@@ -84,6 +84,8 @@ void platform_sleep(u32 ms) {
 
 #if RENDERER == VULKAN
 
+#include "engine/renderer/vulkan/vulkan_types.h"
+
 bool platform_required_vulkan_extensions(PlatformState *platform_state, const char ***out_extension_names) {
     InternalState *internal_state = (InternalState *) platform_state->internal_state;
 
@@ -99,6 +101,15 @@ bool platform_required_vulkan_extensions(PlatformState *platform_state, const ch
         return false;
     }
 
+    return true;
+}
+
+bool platform_vulkan_create_surface(PlatformState *platform_state, VulkanContext *context, VkSurfaceKHR *out_surface) {
+    InternalState *internal_state = (InternalState *) platform_state->internal_state;
+    if (!SDL_Vulkan_CreateSurface(internal_state->window, context->instance.vk_instance, out_surface)) {
+        LOG_ERROR("Failed to create SDL vulkan surface: %s", SDL_GetError());
+        return false;
+    }
     return true;
 }
 
