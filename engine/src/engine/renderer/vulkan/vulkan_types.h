@@ -23,6 +23,8 @@ typedef struct VulkanInstance {
 
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
+    VkDebugUtilsMessengerEXT debug_utils_messenger;
+
     VulkanInstance instance;
     VkPhysicalDevice physical_device;
     VkDevice device;

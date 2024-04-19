@@ -4,6 +4,7 @@
 
 #include "vulkan_types.h"
 #include "vulkan_instance.h"
+#include "debug_messenger.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -23,6 +24,7 @@ bool vulkan_initialize(RendererBackend *backend, PlatformState *platform_state, 
 void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
+    debug_messenger_destroy(context);
     vulkan_instance_destroy(context);
 
     memory_free((VulkanContext *) backend->renderer_context);
@@ -36,6 +38,11 @@ void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height) {
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name) {
     if (!vulkan_instance_create(context, platform_state, app_name)) {
         LOG_ERROR("Failed to create Vulkan instance");
+        return false;
+    }
+
+    if (!debug_messenger_create(context)) {
+        LOG_ERROR("Failed to create Vulkan debug messenger");
         return false;
     }
 

@@ -69,7 +69,7 @@ bool vulkan_instance_create(VulkanContext *context, PlatformState *platform_stat
     query_available_layers(&instance.available_layers);
 
     const char *requested_extensions[] = {
-            "VK_EXT_debug_utils",
+            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     };
 
     for (int i = 0; i < sizeof(requested_extensions) / sizeof(requested_extensions[0]); ++i) {
