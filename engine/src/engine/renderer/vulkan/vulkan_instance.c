@@ -63,13 +63,13 @@ bool vulkan_instance_create(VulkanContext *context, PlatformState *platform_stat
 
     const char **extensions = 0;
     platform_required_vulkan_extensions(platform_state, &extensions);
-    darray_push(extensions, &VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
 
     query_available_extensions(&instance.available_extensions);
     query_available_layers(&instance.available_layers);
 
     const char *requested_extensions[] = {
             VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+            VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
     };
 
     for (int i = 0; i < sizeof(requested_extensions) / sizeof(requested_extensions[0]); ++i) {
