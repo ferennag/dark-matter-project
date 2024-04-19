@@ -40,8 +40,8 @@ bool debug_messenger_create(VulkanContext *context) {
     PFN_vkCreateDebugUtilsMessengerEXT create_func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
             context->instance.vk_instance, "vkCreateDebugUtilsMessengerEXT");
 
-    create_func(context->instance.vk_instance, &create_info, context->allocation_callbacks,
-                &context->debug_utils_messenger);
+    VK_CHECK(create_func(context->instance.vk_instance, &create_info, context->allocation_callbacks,
+                &context->debug_utils_messenger))
 
     return true;
 }

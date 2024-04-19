@@ -21,11 +21,16 @@ typedef struct VulkanInstance {
     VkLayerProperties *available_layers;
 } VulkanInstance;
 
+typedef struct PhysicalDevice {
+    VkPhysicalDevice vk_device;
+    VkPhysicalDeviceProperties properties;
+} PhysicalDevice;
+
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
     VkDebugUtilsMessengerEXT debug_utils_messenger;
 
     VulkanInstance instance;
-    VkPhysicalDevice physical_device;
+    PhysicalDevice physical_device;
     VkDevice device;
 } VulkanContext;

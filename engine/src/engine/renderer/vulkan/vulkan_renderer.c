@@ -5,6 +5,7 @@
 #include "vulkan_types.h"
 #include "vulkan_instance.h"
 #include "debug_messenger.h"
+#include "physical_device.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -25,6 +26,7 @@ void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
     debug_messenger_destroy(context);
+    physical_device_shutdown(context);
     vulkan_instance_destroy(context);
 
     memory_free((VulkanContext *) backend->renderer_context);
@@ -43,6 +45,11 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
 
     if (!debug_messenger_create(context)) {
         LOG_ERROR("Failed to create Vulkan debug messenger");
+        return false;
+    }
+
+    if (!physical_device_select_best(context)) {
+        LOG_ERROR("Failed to select a physical device");
         return false;
     }
 

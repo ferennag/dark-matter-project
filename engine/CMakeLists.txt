@@ -27,6 +27,8 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/vulkan_instance.h
         src/engine/renderer/vulkan/debug_messenger.h
         src/engine/renderer/vulkan/debug_messenger.c
+        src/engine/renderer/vulkan/physical_device.c
+        src/engine/renderer/vulkan/physical_device.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g)
 target_include_directories(dark_matter_engine PUBLIC src)
