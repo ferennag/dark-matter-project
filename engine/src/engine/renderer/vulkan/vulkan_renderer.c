@@ -7,6 +7,7 @@
 #include "debug_messenger.h"
 #include "physical_device.h"
 #include "device.h"
+#include "swapchain.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -26,6 +27,7 @@ bool vulkan_initialize(RendererBackend *backend, PlatformState *platform_state, 
 void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
+    swapchain_destroy(context, &context->swap_chain);
     device_destroy(context);
     vkDestroySurfaceKHR(context->instance.vk_instance, context->surface, context->allocation_callbacks);
     physical_device_shutdown(context);
@@ -62,6 +64,11 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
 
     if (!device_create(context)) {
         LOG_ERROR("Failed to create logical device");
+        return false;
+    }
+
+    if(!swapchain_create(context, &context->swap_chain)) {
+        LOG_ERROR("Failed to create swap chain");
         return false;
     }
 

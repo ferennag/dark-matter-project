@@ -76,6 +76,12 @@ bool device_create(VulkanContext *context) {
         darray_push(extensions, &"VK_KHR_portability_subset");
     }
 
+    if (!is_device_extension_available(&device, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+        LOG_ERROR("Extension unavailable: %s", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        return false;
+    }
+    darray_push(extensions, &VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+
     VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
     device_create_info.enabledExtensionCount = darray_length(extensions);
     device_create_info.ppEnabledExtensionNames = extensions;
@@ -99,4 +105,14 @@ void device_destroy(VulkanContext *context) {
     context->device.available_extensions = NULL;
 
     vkDestroyDevice(context->device.vk_device, context->allocation_callbacks);
+}
+
+QueueFamily *find_queue_family(VulkanContext *context, QueueCapability capability) {
+    for (int i = 0; i < darray_length(context->device.queue_families); ++i) {
+        if (context->device.queue_families[i].capabilities[capability]) {
+            return &context->device.queue_families[i];
+        }
+    }
+
+    return NULL;
 }

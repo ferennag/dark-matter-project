@@ -47,6 +47,14 @@ typedef struct Device {
     VkExtensionProperties *available_extensions;
 } Device;
 
+typedef struct SwapChain {
+    VkSwapchainKHR vk_swapchain;
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    VkSurfaceFormatKHR surface_format;
+    VkImage *images;
+    VkImageView *image_views;
+} SwapChain;
+
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
     VkDebugUtilsMessengerEXT debug_utils_messenger;
@@ -55,4 +63,5 @@ typedef struct VulkanContext {
     PhysicalDevice physical_device;
     VkSurfaceKHR surface;
     Device device;
+    SwapChain swap_chain;
 } VulkanContext;
