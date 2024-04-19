@@ -8,10 +8,10 @@ typedef struct ApplicationConfig {
     const char *name;
 } ApplicationConfig;
 
-bool application_startup(Game *game);
+API bool application_startup(Game *game);
 
-void application_shutdown();
+API void application_shutdown();
 
-void application_run();
+API void application_run();
 
-void application_quit();
+API void application_quit();

@@ -36,8 +36,14 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/swapchain.c
         src/engine/renderer/vulkan/swapchain.h
 )
-target_compile_options(dark_matter_engine PRIVATE -Wall -g)
+target_compile_options(dark_matter_engine PRIVATE -Wall -g -DAPI_EXPORT)
 target_include_directories(dark_matter_engine PUBLIC src)
 target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan)
-
 add_compile_definitions(RENDERER=VULKAN)
+
+IF (WIN32)
+add_custom_command(TARGET dark_matter_engine
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/dark_matter_engine.dll $<TARGET_FILE_DIR:dark_matter_testbed>
+)
+ENDIF ()

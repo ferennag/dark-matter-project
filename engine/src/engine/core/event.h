@@ -19,10 +19,10 @@ typedef union EventData {
 
 typedef void (*event_callback)(EventType type, EventData data);
 
-bool event_init();
+API bool event_init();
 
-void event_shutdown();
+API void event_shutdown();
 
-bool event_subscribe(EventType type, event_callback callback);
+API bool event_subscribe(EventType type, event_callback callback);
 
-void event_dispatch(EventType type, EventData data);
+API void event_dispatch(EventType type, EventData data);
