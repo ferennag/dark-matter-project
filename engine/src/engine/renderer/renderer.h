@@ -9,6 +9,8 @@ typedef struct RendererBackend {
     void (*shutdown)(struct RendererBackend *backend);
 
     void (*resized)(struct RendererBackend *backend, u32 width, u32 height);
+
+    void *renderer_context;
 } RendererBackend;
 
 typedef struct RenderPacket {} RenderPacket;

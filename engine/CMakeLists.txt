@@ -23,7 +23,11 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/vulkan_renderer.c
         src/engine/renderer/vulkan/vulkan_renderer.h
         src/engine/renderer/vulkan/vulkan_types.h
+        src/engine/renderer/vulkan/vulkan_instance.c
+        src/engine/renderer/vulkan/vulkan_instance.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g)
 target_include_directories(dark_matter_engine PUBLIC src)
 target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan)
+
+add_compile_definitions(RENDERER=VULKAN)

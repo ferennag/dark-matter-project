@@ -1,6 +1,7 @@
 #pragma once
 
 typedef enum InputMouseButton {
+    MOUSE_BUTTON_UNKNOWN,
     MOUSE_BUTTON_LEFT,
     MOUSE_BUTTON_RIGHT,
     MOUSE_BUTTON_MIDDLE,
@@ -9,6 +10,7 @@ typedef enum InputMouseButton {
 } InputMouseButton;
 
 typedef enum InputKey {
+    KEY_UNKNOWN,
     KEY_ESCAPE,
     KEY_SPACE,
     KEY_A,

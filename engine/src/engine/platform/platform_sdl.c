@@ -2,8 +2,16 @@
 #include "SDL2/SDL.h"
 #include "std/core/logger.h"
 #include "std/core/memory.h"
+#include "std/containers/darray.h"
 #include "engine/core/event.h"
 #include "engine/core/input.h"
+
+
+#if RENDERER == VULKAN
+
+#include <SDL_vulkan.h>
+
+#endif
 
 typedef struct InternalState {
     SDL_Window *window;
@@ -11,6 +19,7 @@ typedef struct InternalState {
 
 // Internal function forward declarations
 bool platform_handle_event(PlatformState *platform_state, SDL_Event *event);
+
 EventData platform_translate_key_event(SDL_KeyboardEvent *event);
 
 /*
@@ -24,13 +33,26 @@ bool platform_startup(PlatformState *platform_state, const char *app_name) {
         return false;
     }
 
+    u32 window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE;
+
+#if RENDERER == VULKAN
+    window_flags |= SDL_WINDOW_VULKAN;
+#endif
+
     SDL_Window *window = SDL_CreateWindow(app_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 760,
-                                          SDL_WINDOW_SHOWN | SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE);
+                                          window_flags);
 
     if (!window) {
         LOG_ERROR("Failed to create SDL window: %s", window);
         return false;
     }
+
+#if RENDERER == VULKAN
+    if (SDL_Vulkan_LoadLibrary(NULL) < 0) {
+        LOG_ERROR("Failed to load Vulkan library: %s", SDL_GetError());
+        return false;
+    }
+#endif
 
     InternalState *internal_state = memory_alloc(sizeof(InternalState));
     platform_state->internal_state = internal_state;
@@ -59,6 +81,28 @@ bool platform_handle_events(PlatformState *platform_state) {
 void platform_sleep(u32 ms) {
     SDL_Delay(ms);
 }
+
+#if RENDERER == VULKAN
+
+bool platform_required_vulkan_extensions(PlatformState *platform_state, const char ***out_extension_names) {
+    InternalState *internal_state = (InternalState *) platform_state->internal_state;
+
+    u32 count = 0;
+    if (SDL_Vulkan_GetInstanceExtensions(internal_state->window, &count, NULL) != SDL_TRUE) {
+        LOG_ERROR("Failed to get Vulkan SDL extensions: %s", SDL_GetError());
+        return false;
+    }
+
+    *out_extension_names = darray_reserve(const char *, count);
+    if (SDL_Vulkan_GetInstanceExtensions(internal_state->window, &count, *out_extension_names) != SDL_TRUE) {
+        LOG_ERROR("Failed to get Vulkan SDL extensions: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+#endif
 
 /*
  *
@@ -176,6 +220,8 @@ EventData platform_translate_key_event(SDL_KeyboardEvent *event) {
             break;
         case SDLK_z:
             data.data_u32[0] = KEY_Z;
+            break;
+        default:
             break;
     }
     return data;

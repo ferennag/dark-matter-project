@@ -1,15 +1,13 @@
 #include "renderer.h"
 
-#define VULKAN_RENDERER
-
-#ifdef VULKAN_RENDERER
+#if RENDERER == VULKAN
 #include "vulkan/vulkan_renderer.h"
 #endif
 
 static RendererBackend renderer_backend = {0};
 
 bool renderer_init(PlatformState *platform_state, const char *app_name) {
-#ifdef VULKAN_RENDERER
+#if RENDERER == VULKAN
     renderer_backend.initialize = vulkan_initialize;
     renderer_backend.shutdown = vulkan_shutdown;
     renderer_backend.resized = vulkan_surface_resized;
