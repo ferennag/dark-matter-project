@@ -47,16 +47,26 @@ typedef struct Device {
     VkExtensionProperties *available_extensions;
 } Device;
 
+typedef struct Surface {
+    VkSurfaceKHR vk_surface;
+    VkSurfaceFormatKHR format;
+    VkPresentModeKHR present_mode;
+    VkSurfaceCapabilitiesKHR capabilities;
+} Surface;
+
 typedef struct SwapChain {
     VkSwapchainKHR vk_swapchain;
-    VkSurfaceCapabilitiesKHR surface_capabilities;
-    VkSurfaceFormatKHR surface_format;
     VkImage *images;
     VkImageView *image_views;
+    VkFramebuffer *framebuffers;
 } SwapChain;
 
 typedef struct GraphicsPipeline {
     VkRenderPass render_pass;
+    VkShaderModule vertex_shader_module;
+    VkShaderModule fragment_shader_module;
+    VkPipelineLayout pipeline_layout;
+    VkPipeline vk_pipeline;
 } GraphicsPipeline;
 
 typedef struct VulkanContext {
@@ -65,8 +75,8 @@ typedef struct VulkanContext {
 
     VulkanInstance instance;
     PhysicalDevice physical_device;
-    VkSurfaceKHR surface;
     Device device;
+    Surface surface;
     SwapChain swap_chain;
     GraphicsPipeline graphics_pipeline;
 } VulkanContext;

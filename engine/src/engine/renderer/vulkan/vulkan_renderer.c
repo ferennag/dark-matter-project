@@ -9,6 +9,7 @@
 #include "device.h"
 #include "swapchain.h"
 #include "graphics_pipeline.h"
+#include "surface.h"
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -31,7 +32,7 @@ void vulkan_shutdown(RendererBackend *backend) {
     graphics_pipeline_destroy(context, &context->graphics_pipeline);
     swapchain_destroy(context, &context->swap_chain);
     device_destroy(context);
-    vkDestroySurfaceKHR(context->instance.vk_instance, context->surface, context->allocation_callbacks);
+    surface_destroy(context);
     physical_device_shutdown(context);
     debug_messenger_destroy(context);
     vulkan_instance_destroy(context);
@@ -60,7 +61,7 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
         return false;
     }
 
-    if (!platform_vulkan_create_surface(platform_state, context, &context->surface)) {
+    if (!surface_create(platform_state, context)) {
         return false;
     }
 
@@ -69,13 +70,13 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
         return false;
     }
 
-    if (!swapchain_create(context, &context->swap_chain)) {
-        LOG_ERROR("Failed to create swap chain");
+    if (!graphics_pipeline_create(context, &context->graphics_pipeline)) {
+        LOG_ERROR("Failed to create graphics pipeline");
         return false;
     }
 
-    if (!graphics_pipeline_create(context, &context->graphics_pipeline)) {
-        LOG_ERROR("Failed to create graphics pipeline");
+    if (!swapchain_create(context, &context->swap_chain)) {
+        LOG_ERROR("Failed to create swap chain");
         return false;
     }
 

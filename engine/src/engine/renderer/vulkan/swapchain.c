@@ -2,57 +2,12 @@
 #include <std/containers/darray.h>
 #include "device.h"
 
-bool select_surface_format(VulkanContext *context, VkSurfaceFormatKHR *out_format) {
-    u32 count = 0;
-    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(context->physical_device.vk_device, context->surface, &count, NULL))
-    VkSurfaceFormatKHR *surface_formats = darray_reserve(VkSurfaceFormatKHR, count);
-    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(context->physical_device.vk_device, context->surface, &count,
-                                                  surface_formats))
-
-    bool found = false;
-    for (int i = 0; i < count; ++i) {
-        VkSurfaceFormatKHR format = surface_formats[i];
-        if (format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR && format.format == VK_FORMAT_B8G8R8A8_SRGB) {
-            *out_format = surface_formats[i];
-            found = true;
-            break;
-        }
-    }
-
-    darray_destroy(surface_formats);
-    return found;
-}
-
-bool select_present_mode(VulkanContext *context, VkPresentModeKHR *out_present_mode) {
-    u32 count = 0;
-    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(context->physical_device.vk_device, context->surface, &count,
-                                                       NULL))
-
-    if (count == 0) {
-        return false;
-    }
-
-    VkPresentModeKHR *present_modes = darray_reserve(VkPresentModeKHR, count);
-    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(context->physical_device.vk_device, context->surface, &count,
-                                                       NULL))
-
-    for (int i = 0; i < count; ++i) {
-        if (present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            *out_present_mode = present_modes[i];
-            return true;
-        }
-    }
-
-    *out_present_mode = present_modes[0];
-    return true;
-}
-
 void create_image_views(VulkanContext *context, SwapChain *swap_chain) {
     swap_chain->image_views = darray_reserve(VkImageView, darray_length(swap_chain->images));
 
     for (int i = 0; i < darray_length(swap_chain->images); ++i) {
         VkImageViewCreateInfo image_view_create_info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        image_view_create_info.format = swap_chain->surface_format.format;
+        image_view_create_info.format = context->surface.format.format;
         image_view_create_info.image = swap_chain->images[i];
         image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -70,28 +25,32 @@ void create_image_views(VulkanContext *context, SwapChain *swap_chain) {
     }
 }
 
+void create_framebuffers(VulkanContext *context, GraphicsPipeline *pipeline, SwapChain *in_out_swapchain) {
+    in_out_swapchain->framebuffers = darray_reserve(VkFramebuffer, darray_length(in_out_swapchain->image_views));
+
+    for (int i = 0; i < darray_length(in_out_swapchain->image_views); ++i) {
+        VkImageView attachments[] = {
+                in_out_swapchain->image_views[i]
+        };
+
+        VkFramebufferCreateInfo create_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+        create_info.attachmentCount = sizeof(attachments) / sizeof(attachments[0]);
+        create_info.pAttachments = attachments;
+        create_info.renderPass = pipeline->render_pass;
+        create_info.layers = 1;
+        create_info.width = context->surface.capabilities.currentExtent.width;
+        create_info.height = context->surface.capabilities.currentExtent.height;
+
+        VK_CHECK(vkCreateFramebuffer(context->device.vk_device, &create_info, context->allocation_callbacks,
+                                     &in_out_swapchain->framebuffers[i]))
+    }
+}
+
 bool swapchain_create(VulkanContext *context, SwapChain *out_swapchain) {
-    VkSurfaceCapabilitiesKHR surface_capabilities;
-    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->physical_device.vk_device, context->surface,
-                                                       &surface_capabilities))
-    out_swapchain->surface_capabilities = surface_capabilities;
-
-    u32 min_image_count = surface_capabilities.minImageCount + 1;
+    u32 min_image_count = context->surface.capabilities.minImageCount + 1;
     min_image_count =
-            min_image_count < surface_capabilities.maxImageCount ? min_image_count : surface_capabilities.maxImageCount;
-
-    VkSurfaceFormatKHR surface_format;
-    if (!select_surface_format(context, &surface_format)) {
-        LOG_ERROR("Couldn't find a suitable surface format for the swapchain");
-        return false;
-    }
-    out_swapchain->surface_format = surface_format;
-
-    VkPresentModeKHR present_mode;
-    if (!select_present_mode(context, &present_mode)) {
-        LOG_ERROR("Couldn't find a suitable present mode for the swapchain");
-        return false;
-    }
+            min_image_count < context->surface.capabilities.maxImageCount ? min_image_count
+                                                                          : context->surface.capabilities.maxImageCount;
 
     QueueFamily *present_queue_family = find_queue_family(context, QUEUE_PRESENT);
 
@@ -101,17 +60,17 @@ bool swapchain_create(VulkanContext *context, SwapChain *out_swapchain) {
     }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
-    swapchain_create_info.surface = context->surface;
-    swapchain_create_info.imageExtent = surface_capabilities.currentExtent;
+    swapchain_create_info.surface = context->surface.vk_surface;
+    swapchain_create_info.imageExtent = context->surface.capabilities.currentExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.minImageCount = min_image_count;
     swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_create_info.imageFormat = surface_format.format;
-    swapchain_create_info.imageColorSpace = surface_format.colorSpace;
-    swapchain_create_info.presentMode = present_mode;
+    swapchain_create_info.imageFormat = context->surface.format.format;
+    swapchain_create_info.imageColorSpace = context->surface.format.colorSpace;
+    swapchain_create_info.presentMode = context->surface.present_mode;
     swapchain_create_info.pQueueFamilyIndices = &present_queue_family->index;
     swapchain_create_info.queueFamilyIndexCount = 1;
 
@@ -125,12 +84,12 @@ bool swapchain_create(VulkanContext *context, SwapChain *out_swapchain) {
     out_swapchain->images = images;
 
     create_image_views(context, out_swapchain);
+    create_framebuffers(context, &context->graphics_pipeline, out_swapchain);
 
     return true;
 }
 
 void swapchain_destroy(VulkanContext *context, SwapChain *swapchain) {
-    vkDestroySwapchainKHR(context->device.vk_device, swapchain->vk_swapchain, context->allocation_callbacks);
     darray_destroy(swapchain->images)
     swapchain->images = NULL;
 
@@ -139,4 +98,12 @@ void swapchain_destroy(VulkanContext *context, SwapChain *swapchain) {
     }
     darray_destroy(swapchain->image_views)
     swapchain->image_views = NULL;
+
+    for (int i = 0; i < darray_length(swapchain->framebuffers); ++i) {
+        vkDestroyFramebuffer(context->device.vk_device, swapchain->framebuffers[i], context->allocation_callbacks);
+    }
+    darray_destroy(swapchain->framebuffers)
+    swapchain->framebuffers = NULL;
+
+    vkDestroySwapchainKHR(context->device.vk_device, swapchain->vk_swapchain, context->allocation_callbacks);
 }

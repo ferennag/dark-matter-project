@@ -18,7 +18,7 @@ QueueFamily *query_queue_families(VulkanContext *context) {
         family.capabilities[QUEUE_TRANSFER] = properties->queueFlags & VK_QUEUE_TRANSFER_BIT;
 
         VkBool32 supported = VK_FALSE;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(context->physical_device.vk_device, i, context->surface,
+        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(context->physical_device.vk_device, i, context->surface.vk_surface,
                                                       &supported));
         family.capabilities[QUEUE_PRESENT] = supported == VK_TRUE;
 

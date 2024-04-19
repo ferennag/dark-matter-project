@@ -39,15 +39,40 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/frame_buffer.h
         src/engine/renderer/vulkan/graphics_pipeline.c
         src/engine/renderer/vulkan/graphics_pipeline.h
+        src/engine/renderer/vulkan/surface.c
+        src/engine/renderer/vulkan/surface.h
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g -DAPI_EXPORT)
 target_include_directories(dark_matter_engine PUBLIC src)
 target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan)
 add_compile_definitions(RENDERER=VULKAN)
 
+function(add_shaders TARGET)
+    set(SHADER_BINARIES)
+    foreach (SHADER_SOURCE IN LISTS ARGN)
+        message("Processing shader: " ${SHADER_SOURCE})
+        get_filename_component(SHADER_FILENAME ${SHADER_SOURCE} NAME)
+        set(SHADER_BINARY_OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_FILENAME}.spv)
+
+        add_custom_command(
+                OUTPUT ${SHADER_BINARY_OUTPUT}
+                COMMAND Vulkan::glslc ${SHADER_SOURCE} -o ${SHADER_BINARY_OUTPUT}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+
+        list(APPEND SHADER_BINARIES ${SHADER_BINARY_OUTPUT})
+    endforeach ()
+
+    set(SHADER_TARGET_NAME ${TARGET}_shaders)
+    add_custom_target(${SHADER_TARGET_NAME} DEPENDS ${SHADER_BINARIES})
+    add_dependencies(${TARGET} ${SHADER_TARGET_NAME})
+endfunction()
+
+add_shaders(dark_matter_engine shaders/basic.vert shaders/basic.frag)
+
 IF (WIN32)
-add_custom_command(TARGET dark_matter_engine
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/dark_matter_engine.dll $<TARGET_FILE_DIR:dark_matter_testbed>
-)
+    add_custom_command(TARGET dark_matter_engine
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/dark_matter_engine.dll $<TARGET_FILE_DIR:dark_matter_testbed>
+    )
 ENDIF ()
