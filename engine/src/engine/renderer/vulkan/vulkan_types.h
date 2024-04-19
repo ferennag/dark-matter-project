@@ -39,6 +39,7 @@ typedef enum QueueCapability {
 typedef struct QueueFamily {
     u32 index;
     bool capabilities[QUEUE_CAPABILITIES_MAX_ENUM];
+    VkCommandPool command_pool;
 } QueueFamily;
 
 typedef struct Device {

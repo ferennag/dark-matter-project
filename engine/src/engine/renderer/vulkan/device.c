@@ -18,8 +18,9 @@ QueueFamily *query_queue_families(VulkanContext *context) {
         family.capabilities[QUEUE_TRANSFER] = properties->queueFlags & VK_QUEUE_TRANSFER_BIT;
 
         VkBool32 supported = VK_FALSE;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(context->physical_device.vk_device, i, context->surface.vk_surface,
-                                                      &supported));
+        VK_CHECK(
+                vkGetPhysicalDeviceSurfaceSupportKHR(context->physical_device.vk_device, i, context->surface.vk_surface,
+                                                     &supported));
         family.capabilities[QUEUE_PRESENT] = supported == VK_TRUE;
 
         families[i] = family;
@@ -64,6 +65,17 @@ bool is_device_extension_available(Device *device, const char *name) {
     return false;
 }
 
+void create_command_pools(VulkanContext *context) {
+    for (int i = 0; i < darray_length(context->device.queue_families); ++i) {
+        QueueFamily *family = &context->device.queue_families[i];
+        VkCommandPoolCreateInfo create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+        create_info.queueFamilyIndex = family->index;
+
+        VK_CHECK(vkCreateCommandPool(context->device.vk_device, &create_info, context->allocation_callbacks,
+                                     &family->command_pool))
+    }
+}
+
 bool device_create(VulkanContext *context) {
     Device device = {0};
     device.queue_families = query_queue_families(context);
@@ -92,12 +104,18 @@ bool device_create(VulkanContext *context) {
                             &device.vk_device))
 
     context->device = device;
+    create_command_pools(context);
     darray_destroy(extensions)
     darray_destroy(queue_create_infos)
     return true;
 }
 
 void device_destroy(VulkanContext *context) {
+    for (int i = 0; i < darray_length(context->device.queue_families); ++i) {
+        vkDestroyCommandPool(context->device.vk_device, context->device.queue_families[i].command_pool,
+                             context->allocation_callbacks);
+    }
+
     darray_destroy(context->device.queue_families);
     context->device.queue_families = NULL;
 
