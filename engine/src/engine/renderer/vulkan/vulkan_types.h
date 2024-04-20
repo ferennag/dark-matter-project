@@ -91,6 +91,11 @@ typedef struct Buffer {
     VkDeviceMemory memory;
 } Buffer;
 
+typedef struct VertexBuffer {
+    Buffer staging_buffer;
+    Buffer device_buffer;
+} VertexBuffer;
+
 // TODO remove this
 typedef struct Scene Scene;
 
@@ -107,6 +112,7 @@ typedef struct VulkanContext {
 
     Queue graphics_queue;
     Queue present_queue;
+    Queue transfer_queue;
 
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;

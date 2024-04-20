@@ -17,7 +17,7 @@
 #include "buffer.h"
 
 typedef struct Scene {
-    Buffer buffer;
+    VertexBuffer buffer;
     Vertex *vertices;
 } Scene;
 
@@ -56,14 +56,12 @@ void init_scene(VulkanContext *context) {
         darray_push(context->scene->vertices, positions[i])
     }
 
-    u32 size = darray_length(context->scene->vertices) * sizeof(Vertex);
-    buffer_create(context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, &context->scene->buffer);
-    buffer_copy(context, &context->scene->buffer, context->scene->vertices);
+    vertex_buffer_create(context, context->scene->vertices, &context->scene->buffer);
 }
 
 void destroy_scene(VulkanContext *context) {
     darray_destroy(context->scene->vertices)
-    buffer_destroy(context, &context->scene->buffer);
+    vertex_buffer_destroy(context, &context->scene->buffer);
     memory_free(context->scene);
     context->scene = NULL;
 }
@@ -140,7 +138,7 @@ void record_commands(VulkanContext *context, RenderPacket *packet, const u32 ima
     vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.vk_buffer, offsets);
+    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.device_buffer.vk_buffer, offsets);
 
     vkCmdDraw(context->graphics_queue.command_buffer, darray_length(context->scene->vertices), 1, 0, 0);
 
@@ -250,6 +248,10 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
     QueueFamily *present_family = find_queue_family(context, QUEUE_PRESENT);
     vkGetDeviceQueue(context->device.vk_device, present_family->index, 0, &context->present_queue.vk_queue);
     command_buffer_create(context, present_family, &context->present_queue.command_buffer);
+
+    QueueFamily *transfer_family = find_queue_family(context, QUEUE_TRANSFER);
+    vkGetDeviceQueue(context->device.vk_device, transfer_family->index, 0, &context->transfer_queue.vk_queue);
+    command_buffer_create(context, transfer_family, &context->transfer_queue.command_buffer);
 
     create_fence(context, &context->in_flight_fence);
     create_semaphore(context, &context->image_available_semaphore);
