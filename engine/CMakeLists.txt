@@ -60,6 +60,7 @@ function(add_shaders TARGET)
                 OUTPUT ${SHADER_BINARY_OUTPUT}
                 COMMAND Vulkan::glslc ${SHADER_SOURCE} -o ${SHADER_BINARY_OUTPUT}
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                DEPENDS ${SHADER_SOURCE}
         )
 
         list(APPEND SHADER_BINARIES ${SHADER_BINARY_OUTPUT})
