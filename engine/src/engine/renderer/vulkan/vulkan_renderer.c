@@ -81,7 +81,7 @@ void record_commands(VulkanContext *context, RenderPacket *packet, const u32 ima
     scissor.extent = context->surface.capabilities.currentExtent;
     vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
-    vkCmdDraw(context->graphics_queue.command_buffer, 3, 0, 0, 0);
+    vkCmdDraw(context->graphics_queue.command_buffer, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(context->graphics_queue.command_buffer);
     command_buffer_end(&context->graphics_queue.command_buffer);
