@@ -18,7 +18,9 @@
 
 typedef struct Scene {
     VertexBuffer buffer;
+    IndexBuffer index_buffer;
     Vertex *vertices;
+    u16 *indices;
 } Scene;
 
 Vertex positions[] = {
@@ -27,41 +29,41 @@ Vertex positions[] = {
                 {1.0f, 0.0f, 0.0f},
         },
         {
-                {-0.5f, 0.5f, 0.0f},
+                {-0.5f, 0.5f,  0.0f},
+                {1.0f, 0.0f, 0.0f},
+        },
+        {
+                {0.5f,  0.5f,  0.0f},
                 {0.0f, 1.0f, 0.0f},
         },
         {
-                {0.5f, 0.5f, 0.0f},
+                {0.5f,  -0.5f, 0.0f},
                 {0.0f, 0.0f, 1.0f},
         },
-        {
-                {0.5f, 0.5f, 0.0f},
-                {0.0f, 0.0f, 1.0f},
-        },
-        {
-                {0.5f, -0.5f, 0.0f},
-                {1.0f, 0.0f, 0.0f},
-        },
-        {
-                {-0.5f, -0.5f, 0.0f},
-                {1.0f, 0.0f, 0.0f},
-        },
+};
+
+u16 indices[] = {
+        0, 1, 2,
+        2, 3, 0
 };
 
 void init_scene(VulkanContext *context) {
     context->scene = memory_alloc(sizeof(Scene));
-    context->scene->vertices = darray_create(Vertex);
+    context->scene->vertices = darray_reserve(Vertex, sizeof(positions) / sizeof(positions[0]));
+    context->scene->indices = darray_reserve(u16, sizeof(indices) / sizeof(indices[0]));
 
-    for (int i = 0; i < sizeof(positions) / sizeof(positions[0]); ++i) {
-        darray_push(context->scene->vertices, positions[i])
-    }
+    memory_copy(context->scene->vertices, positions, sizeof(positions));
+    memory_copy(context->scene->indices, indices, sizeof(indices));
 
     vertex_buffer_create(context, context->scene->vertices, &context->scene->buffer);
+    index_buffer_create(context, context->scene->indices, &context->scene->index_buffer);
 }
 
 void destroy_scene(VulkanContext *context) {
     darray_destroy(context->scene->vertices)
+    darray_destroy(context->scene->indices)
     vertex_buffer_destroy(context, &context->scene->buffer);
+    index_buffer_destroy(context, &context->scene->index_buffer);
     memory_free(context->scene);
     context->scene = NULL;
 }
@@ -138,9 +140,12 @@ void record_commands(VulkanContext *context, RenderPacket *packet, const u32 ima
     vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.device_buffer.vk_buffer, offsets);
+    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1,
+                           &context->scene->buffer.device_buffer.vk_buffer, offsets);
+    vkCmdBindIndexBuffer(context->graphics_queue.command_buffer, context->scene->index_buffer.device_buffer.vk_buffer,
+                         0, VK_INDEX_TYPE_UINT16);
 
-    vkCmdDraw(context->graphics_queue.command_buffer, darray_length(context->scene->vertices), 1, 0, 0);
+    vkCmdDrawIndexed(context->graphics_queue.command_buffer, darray_length(context->scene->indices), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(context->graphics_queue.command_buffer);
     command_buffer_end(&context->graphics_queue.command_buffer);

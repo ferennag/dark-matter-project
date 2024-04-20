@@ -96,6 +96,11 @@ typedef struct VertexBuffer {
     Buffer device_buffer;
 } VertexBuffer;
 
+typedef struct IndexBuffer {
+    Buffer staging_buffer;
+    Buffer device_buffer;
+} IndexBuffer;
+
 // TODO remove this
 typedef struct Scene Scene;
 

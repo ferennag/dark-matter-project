@@ -17,3 +17,9 @@ bool vertex_buffer_create(VulkanContext *context, Vertex *vertices, VertexBuffer
 void vertex_buffer_destroy(VulkanContext *context, VertexBuffer *buffer);
 
 void vertex_buffer_copy(VulkanContext *context, VertexBuffer *buffer, Vertex *vertices);
+
+bool index_buffer_create(VulkanContext *context, u16 *indices, IndexBuffer *out);
+
+void index_buffer_destroy(VulkanContext *context, IndexBuffer *buffer);
+
+void index_buffer_copy(VulkanContext *context, IndexBuffer *buffer, u16 *indices);

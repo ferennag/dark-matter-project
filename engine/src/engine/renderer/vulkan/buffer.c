@@ -111,3 +111,31 @@ void vertex_buffer_copy(VulkanContext *context, VertexBuffer *buffer, Vertex *ve
     buffer_copy(context, &buffer->staging_buffer, vertices);
     buffer_to_buffer_copy(context, &buffer->device_buffer, &buffer->staging_buffer);
 }
+
+bool index_buffer_create(VulkanContext *context, u16 *indices, IndexBuffer *out) {
+    u32 size = sizeof(u16) * darray_length(indices);
+    if (!buffer_create(context, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size,
+                       &out->staging_buffer)) {
+        return false;
+    }
+
+    if (!buffer_create(context, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size, &out->device_buffer)) {
+        return false;
+    }
+
+    index_buffer_copy(context, out, indices);
+
+    return true;
+}
+
+void index_buffer_destroy(VulkanContext *context, IndexBuffer *buffer) {
+    buffer_destroy(context, &buffer->staging_buffer);
+    buffer_destroy(context, &buffer->device_buffer);
+}
+
+void index_buffer_copy(VulkanContext *context, IndexBuffer *buffer, u16 *indices) {
+    buffer_copy(context, &buffer->staging_buffer, indices);
+    buffer_to_buffer_copy(context, &buffer->device_buffer, &buffer->staging_buffer);
+}
