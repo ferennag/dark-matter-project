@@ -6,6 +6,12 @@ FetchContent_Declare(SDL2
 )
 FetchContent_MakeAvailable(SDL2)
 
+FetchContent_Declare(cglm
+        GIT_REPOSITORY https://github.com/recp/cglm.git
+        GIT_TAG v0.9.4
+)
+FetchContent_MakeAvailable(cglm)
+
 find_package(Vulkan)
 
 add_library(dark_matter_engine SHARED
@@ -43,10 +49,19 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/vulkan/surface.h
         src/engine/renderer/vulkan/command_buffer.c
         src/engine/renderer/vulkan/command_buffer.h
+        src/engine/renderer/data.h
+        src/engine/renderer/vulkan/pipeline_config.c
+        src/engine/renderer/vulkan/pipeline_config.h
+        src/engine/renderer/vulkan/vertex_buffer.c
+        src/engine/renderer/vulkan/vertex_buffer.h
+        src/engine/scene/game_object.c
+        src/engine/scene/game_object.h
+        src/engine/scene/game_object.h
+        src/engine/scene/game_object.c
 )
 target_compile_options(dark_matter_engine PRIVATE -Wall -g -DAPI_EXPORT)
 target_include_directories(dark_matter_engine PUBLIC src)
-target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan)
+target_link_libraries(dark_matter_engine PUBLIC std SDL2::SDL2 Vulkan::Vulkan cglm)
 add_compile_definitions(RENDERER=VULKAN)
 
 function(add_shaders TARGET)

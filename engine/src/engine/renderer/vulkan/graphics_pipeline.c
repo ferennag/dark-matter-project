@@ -1,6 +1,7 @@
 #include "graphics_pipeline.h"
 #include <std/core/file.h>
 #include <std/core/memory.h>
+#include <std/containers/darray.h>
 
 void create_shader_module(VulkanContext *context, const char *shader_binary_path, VkShaderModule *out) {
     BinaryContents code = {0};
@@ -56,10 +57,11 @@ void create_render_pass(VulkanContext *context, VkRenderPass *out) {
             vkCreateRenderPass(context->device.vk_device, &render_pass_create_info, context->allocation_callbacks, out))
 }
 
-bool graphics_pipeline_create(VulkanContext *context, GraphicsPipeline *out) {
+bool
+graphics_pipeline_create(VulkanContext *context, GraphicsPipelineConfiguration *configuration, GraphicsPipeline *out) {
     create_render_pass(context, &out->render_pass);
-    create_shader_module(context, "../shaders/basic.vert.spv", &out->vertex_shader_module);
-    create_shader_module(context, "../shaders/basic.frag.spv", &out->fragment_shader_module);
+    create_shader_module(context, configuration->vertex_shader, &out->vertex_shader_module);
+    create_shader_module(context, configuration->fragment_shader, &out->fragment_shader_module);
 
     VkDynamicState dynamic_states[] = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -72,10 +74,10 @@ bool graphics_pipeline_create(VulkanContext *context, GraphicsPipeline *out) {
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
-    vertex_input_create_info.vertexBindingDescriptionCount = 0;
-    vertex_input_create_info.pVertexBindingDescriptions = 0;
-    vertex_input_create_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_create_info.pVertexAttributeDescriptions = 0;
+    vertex_input_create_info.vertexBindingDescriptionCount = darray_length(configuration->vertex_binding_descriptions);
+    vertex_input_create_info.pVertexBindingDescriptions = configuration->vertex_binding_descriptions;
+    vertex_input_create_info.vertexAttributeDescriptionCount = darray_length(configuration->vertex_attribute_descriptions);
+    vertex_input_create_info.pVertexAttributeDescriptions = configuration->vertex_attribute_descriptions;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info = {
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
@@ -94,8 +96,8 @@ bool graphics_pipeline_create(VulkanContext *context, GraphicsPipeline *out) {
     rasterization_create_info.depthBiasEnable = false;
     rasterization_create_info.depthClampEnable = false;
     rasterization_create_info.rasterizerDiscardEnable = false;
-//    rasterization_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_create_info.cullMode = VK_CULL_MODE_NONE;
+    rasterization_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
 
     VkPipelineMultisampleStateCreateInfo multisample_create_info = {
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};

@@ -68,6 +68,14 @@ typedef struct SwapChain {
     VkFramebuffer *framebuffers;
 } SwapChain;
 
+typedef struct GraphicsPipelineConfiguration {
+    const char *vertex_shader;
+    const char *fragment_shader;
+
+    VkVertexInputAttributeDescription *vertex_attribute_descriptions;
+    VkVertexInputBindingDescription *vertex_binding_descriptions;
+} GraphicsPipelineConfiguration;
+
 typedef struct GraphicsPipeline {
     VkRenderPass render_pass;
     VkShaderModule vertex_shader_module;
@@ -75,6 +83,16 @@ typedef struct GraphicsPipeline {
     VkPipelineLayout pipeline_layout;
     VkPipeline vk_pipeline;
 } GraphicsPipeline;
+
+typedef struct VertexBuffer {
+    VkBuffer buffer;
+    u32 size;
+    VkMemoryRequirements memory_requirements;
+    VkDeviceMemory memory;
+} VertexBuffer;
+
+// TODO remove this
+typedef struct Scene Scene;
 
 typedef struct VulkanContext {
     VkAllocationCallbacks *allocation_callbacks;
@@ -93,4 +111,5 @@ typedef struct VulkanContext {
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
+    Scene *scene;
 } VulkanContext;

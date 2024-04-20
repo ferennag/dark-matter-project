@@ -1,7 +1,9 @@
 #include "vulkan_renderer.h"
 #include <std/core/memory.h>
 #include <std/core/logger.h>
+#include <std/containers/darray.h>
 
+#include "engine/renderer/data.h"
 #include "vulkan_types.h"
 #include "vulkan_instance.h"
 #include "debug_messenger.h"
@@ -9,8 +11,61 @@
 #include "device.h"
 #include "swapchain.h"
 #include "graphics_pipeline.h"
+#include "pipeline_config.h"
 #include "surface.h"
 #include "command_buffer.h"
+#include "vertex_buffer.h"
+
+typedef struct Scene {
+    VertexBuffer buffer;
+    Vertex *vertices;
+} Scene;
+
+Vertex positions[] = {
+        {
+                {-0.5f, -0.5f, 0.0f},
+                {1.0f, 0.0f, 0.0f},
+        },
+        {
+                {-0.5f, 0.5f, 0.0f},
+                {0.0f, 1.0f, 0.0f},
+        },
+        {
+                {0.5f, 0.5f, 0.0f},
+                {0.0f, 0.0f, 1.0f},
+        },
+        {
+                {0.5f, 0.5f, 0.0f},
+                {0.0f, 0.0f, 1.0f},
+        },
+        {
+                {0.5f, -0.5f, 0.0f},
+                {1.0f, 0.0f, 0.0f},
+        },
+        {
+                {-0.5f, -0.5f, 0.0f},
+                {1.0f, 0.0f, 0.0f},
+        },
+};
+
+void init_scene(VulkanContext *context) {
+    context->scene = memory_alloc(sizeof(Scene));
+    context->scene->vertices = darray_create(Vertex);
+
+    for (int i = 0; i < sizeof(positions) / sizeof(positions[0]); ++i) {
+        darray_push(context->scene->vertices, positions[i])
+    }
+
+    vertex_buffer_create(context, context->scene->vertices, &context->scene->buffer);
+    vertex_buffer_copy(context, &context->scene->buffer, context->scene->vertices);
+}
+
+void destroy_scene(VulkanContext *context) {
+    darray_destroy(context->scene->vertices)
+    vertex_buffer_destroy(context, &context->scene->buffer);
+    memory_free(context->scene);
+    context->scene = NULL;
+}
 
 bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, const char *app_name);
 
@@ -31,6 +86,8 @@ void vulkan_shutdown(RendererBackend *backend) {
     VulkanContext *context = backend->renderer_context;
 
     vkDeviceWaitIdle(context->device.vk_device);
+
+    destroy_scene(context);
 
     vkDestroyFence(context->device.vk_device, context->in_flight_fence, context->allocation_callbacks);
     vkDestroySemaphore(context->device.vk_device, context->render_finished_semaphore, context->allocation_callbacks);
@@ -81,7 +138,10 @@ void record_commands(VulkanContext *context, RenderPacket *packet, const u32 ima
     scissor.extent = context->surface.capabilities.currentExtent;
     vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
-    vkCmdDraw(context->graphics_queue.command_buffer, 3, 1, 0, 0);
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.buffer, offsets);
+
+    vkCmdDraw(context->graphics_queue.command_buffer, darray_length(context->scene->vertices), 1, 0, 0);
 
     vkCmdEndRenderPass(context->graphics_queue.command_buffer);
     command_buffer_end(&context->graphics_queue.command_buffer);
@@ -162,10 +222,20 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
         return false;
     }
 
-    if (!graphics_pipeline_create(context, &context->graphics_pipeline)) {
+    GraphicsPipelineConfiguration *basic_pipeline_config = pipeline_config_create("../shaders/basic.vert.spv",
+                                                                                  "../shaders/basic.frag.spv");
+    pipeline_config_add_va_binding(basic_pipeline_config, VK_VERTEX_INPUT_RATE_VERTEX, 0, sizeof(Vertex));
+    pipeline_config_add_va_description(basic_pipeline_config, VK_FORMAT_R32G32B32_SFLOAT, 0, 0,
+                                       offsetof(Vertex, position));
+    pipeline_config_add_va_description(basic_pipeline_config, VK_FORMAT_R32G32B32_SFLOAT, 0, 1,
+                                       offsetof(Vertex, color));
+
+    if (!graphics_pipeline_create(context, basic_pipeline_config, &context->graphics_pipeline)) {
         LOG_ERROR("Failed to create graphics pipeline");
         return false;
     }
+
+    pipeline_config_destroy(basic_pipeline_config);
 
     if (!swapchain_create(context, &context->swap_chain)) {
         LOG_ERROR("Failed to create swap chain");
@@ -183,6 +253,8 @@ bool vulkan_init_context(VulkanContext *context, PlatformState *platform_state, 
     create_fence(context, &context->in_flight_fence);
     create_semaphore(context, &context->image_available_semaphore);
     create_semaphore(context, &context->render_finished_semaphore);
+
+    init_scene(context);
 
     return true;
 }
