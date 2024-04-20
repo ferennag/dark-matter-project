@@ -14,10 +14,10 @@
 #include "pipeline_config.h"
 #include "surface.h"
 #include "command_buffer.h"
-#include "vertex_buffer.h"
+#include "buffer.h"
 
 typedef struct Scene {
-    VertexBuffer buffer;
+    Buffer buffer;
     Vertex *vertices;
 } Scene;
 
@@ -56,13 +56,14 @@ void init_scene(VulkanContext *context) {
         darray_push(context->scene->vertices, positions[i])
     }
 
-    vertex_buffer_create(context, context->scene->vertices, &context->scene->buffer);
-    vertex_buffer_copy(context, &context->scene->buffer, context->scene->vertices);
+    u32 size = darray_length(context->scene->vertices) * sizeof(Vertex);
+    buffer_create(context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, &context->scene->buffer);
+    buffer_copy(context, &context->scene->buffer, context->scene->vertices);
 }
 
 void destroy_scene(VulkanContext *context) {
     darray_destroy(context->scene->vertices)
-    vertex_buffer_destroy(context, &context->scene->buffer);
+    buffer_destroy(context, &context->scene->buffer);
     memory_free(context->scene);
     context->scene = NULL;
 }
@@ -112,7 +113,7 @@ void vulkan_surface_resized(RendererBackend *backend, u32 width, u32 height) {
 void record_commands(VulkanContext *context, RenderPacket *packet, const u32 image_index) {
     command_buffer_begin(&context->graphics_queue.command_buffer);
 
-    VkClearValue clear_color = {{{0.02f, 0.02f, 0.02f, 1.0f}}};
+    VkClearValue clear_color = {{{0.01f, 0.01f, 0.01f, 1.0f}}};
 
     VkRenderPassBeginInfo render_pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
     render_pass_info.renderPass = context->graphics_pipeline.render_pass;
@@ -139,7 +140,7 @@ void record_commands(VulkanContext *context, RenderPacket *packet, const u32 ima
     vkCmdSetScissor(context->graphics_queue.command_buffer, 0, 1, &scissor);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.buffer, offsets);
+    vkCmdBindVertexBuffers(context->graphics_queue.command_buffer, 0, 1, &context->scene->buffer.vk_buffer, offsets);
 
     vkCmdDraw(context->graphics_queue.command_buffer, darray_length(context->scene->vertices), 1, 0, 0);
 

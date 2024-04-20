@@ -1,4 +1,4 @@
-#include "vertex_buffer.h"
+#include "buffer.h"
 #include <std/containers/darray.h>
 #include <std/core/memory.h>
 
@@ -17,16 +17,16 @@ bool find_memory_type(VulkanContext *context, uint32_t type_filter, VkMemoryProp
 }
 
 
-bool vertex_buffer_create(VulkanContext *context, Vertex *vertices, VertexBuffer *out) {
-    out->size = darray_length(vertices) * sizeof(Vertex);
+bool buffer_create(VulkanContext *context, VkBufferUsageFlags usage, u32 size, Buffer *out) {
+    out->size = size;
 
     VkBufferCreateInfo create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     create_info.size = out->size;
     create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(context->device.vk_device, &create_info, context->allocation_callbacks, &out->buffer))
-    vkGetBufferMemoryRequirements(context->device.vk_device, out->buffer, &out->memory_requirements);
+    VK_CHECK(vkCreateBuffer(context->device.vk_device, &create_info, context->allocation_callbacks, &out->vk_buffer))
+    vkGetBufferMemoryRequirements(context->device.vk_device, out->vk_buffer, &out->memory_requirements);
 
     u32 type;
     if (!find_memory_type(context, out->memory_requirements.memoryTypeBits,
@@ -40,17 +40,17 @@ bool vertex_buffer_create(VulkanContext *context, Vertex *vertices, VertexBuffer
 
     VK_CHECK(vkAllocateMemory(context->device.vk_device, &allocate_info, context->allocation_callbacks, &out->memory))
 
-    vkBindBufferMemory(context->device.vk_device, out->buffer, out->memory, 0);
+    vkBindBufferMemory(context->device.vk_device, out->vk_buffer, out->memory, 0);
 
     return true;
 }
 
-void vertex_buffer_destroy(VulkanContext *context, VertexBuffer *buffer) {
-    vkDestroyBuffer(context->device.vk_device, buffer->buffer, context->allocation_callbacks);
+void buffer_destroy(VulkanContext *context, Buffer *buffer) {
+    vkDestroyBuffer(context->device.vk_device, buffer->vk_buffer, context->allocation_callbacks);
     vkFreeMemory(context->device.vk_device, buffer->memory, context->allocation_callbacks);
 }
 
-void vertex_buffer_copy(VulkanContext *context, VertexBuffer *buffer, Vertex *vertices) {
+void buffer_copy(VulkanContext *context, Buffer *buffer, Vertex *vertices) {
     void *data;
     vkMapMemory(context->device.vk_device, buffer->memory, 0, buffer->size, 0, &data);
     memory_copy(data, vertices, buffer->size);

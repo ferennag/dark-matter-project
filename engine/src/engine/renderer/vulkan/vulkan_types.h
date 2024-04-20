@@ -84,12 +84,12 @@ typedef struct GraphicsPipeline {
     VkPipeline vk_pipeline;
 } GraphicsPipeline;
 
-typedef struct VertexBuffer {
-    VkBuffer buffer;
+typedef struct Buffer {
+    VkBuffer vk_buffer;
     u32 size;
     VkMemoryRequirements memory_requirements;
     VkDeviceMemory memory;
-} VertexBuffer;
+} Buffer;
 
 // TODO remove this
 typedef struct Scene Scene;

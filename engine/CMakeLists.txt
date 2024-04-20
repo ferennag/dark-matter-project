@@ -52,8 +52,8 @@ add_library(dark_matter_engine SHARED
         src/engine/renderer/data.h
         src/engine/renderer/vulkan/pipeline_config.c
         src/engine/renderer/vulkan/pipeline_config.h
-        src/engine/renderer/vulkan/vertex_buffer.c
-        src/engine/renderer/vulkan/vertex_buffer.h
+        src/engine/renderer/vulkan/buffer.c
+        src/engine/renderer/vulkan/buffer.h
         src/engine/scene/game_object.c
         src/engine/scene/game_object.h
         src/engine/scene/game_object.h
